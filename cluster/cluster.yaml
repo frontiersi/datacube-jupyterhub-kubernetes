@@ -1,7 +1,7 @@
 apiVersion: kops/v1alpha2
 kind: Cluster
 metadata:
-  creationTimestamp: 2018-06-06T03:14:56Z
+  creationTimestamp: 2018-06-12T05:57:21Z
   name: odc.staging.frontiersi.io
 spec:
   api:
@@ -38,6 +38,10 @@ spec:
     name: ap-southeast-2a
     type: Public
     zone: ap-southeast-2a
+  - cidr: 172.20.64.0/19
+    name: ap-southeast-2b
+    type: Public
+    zone: ap-southeast-2b
   topology:
     dns:
       type: Public

@@ -1,7 +1,19 @@
 ## Initial Setup
 # Create the cluster
+
+
 create-cluster:
-	kops create -f cluster/cluster.yaml --yes
+	kops create cluster \
+		--zones ap-southeast-2a,ap-southeast-2b odc.staging.frontiersi.io \
+		--ssh-public-key ~/.ssh/frontiersi.pub \
+		--master-size t2.micro \
+		--node-size t2.medium \
+		--node-count 2 \
+		--yes
+
+# create-cluster:
+# 	kops create -f cluster/cluster.yaml
+	# Follow the prompts to complete this...
 
 validate:
 	kops validate cluster
@@ -78,6 +90,42 @@ deploy-letsencrypt:
 	kubectl apply -f ingress/cluster-role.yaml
 	kubectl apply -f ingress/cluster-role-binding.yaml
 	kubectl apply -f ingress/deployment.yaml
+
+
+## AWS Infrastructure ##
+create-vpc:
+	aws cloudformation create-stack \
+		--region ap-southeast-2 \
+		--stack-name odc-jupyterhub-infra-vpc \
+		--template-body file://cloudformation//vpc.yaml \
+		--parameter file://cloudformation//parameters-vpc.json \
+		--tags Key=app,Value=esp \
+		--capabilities CAPABILITY_NAMED_IAM
+
+update-vpc:
+	aws cloudformation update-stack \
+		--stack-name odc-jupyterhub-infra-vpc \
+		--template-body file://cloudformation//vpc.yaml \
+		--parameter file://cloudformation//parameters-vpc.json \
+		--tags Key=app,Value=esp \
+		--capabilities CAPABILITY_NAMED_IAM
+
+create-rds:
+	aws cloudformation create-stack \
+		--region ap-southeast-2 \
+		--stack-name odc-kube-jupyterhub-rds \
+		--template-body file://cloudformation//rds.yaml \
+		--parameter file://cloudformation//parameters-rds.json \
+		--tags Key=app,Value=odc-jupyterhub \
+		--capabilities CAPABILITY_NAMED_IAM
+
+update-rds:
+	aws cloudformation update-stack \
+		--stack-name odc-kube-jupyterhub-rds \
+		--template-body file://cloudformation//rds.yaml \
+		--parameter file://cloudformation//parameters-rds.json \
+		--tags Key=app,Value=odc-jupyterhub \
+		--capabilities CAPABILITY_NAMED_IAM
 
 ## Encryption and decryption of parameters
 # Staging
