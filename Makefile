@@ -2,18 +2,18 @@
 # Create the cluster
 
 
-create-cluster:
-	kops create cluster \
-		--zones ap-southeast-2a,ap-southeast-2b odc.staging.frontiersi.io \
-		--ssh-public-key ~/.ssh/frontiersi.pub \
-		--master-size t2.micro \
-		--node-size t2.medium \
-		--node-count 2 \
-		--yes
-
 # create-cluster:
-# 	kops create -f cluster/cluster.yaml
-	# Follow the prompts to complete this...
+# 	kops create cluster \
+# 		--zones ap-southeast-2a,ap-southeast-2b odc.staging.frontiersi.io \
+# 		--ssh-public-key ~/.ssh/frontiersi.pub \
+# 		--master-size t2.micro \
+# 		--node-size t2.medium \
+# 		--node-count 2 \
+# 		--yes
+
+create-cluster:
+	kops create -f cluster/cluster.yaml
+	Follow the prompts to complete this...
 
 validate:
 	kops validate cluster
@@ -33,6 +33,8 @@ proxy:
 
 ## JupyterHub
 # https://docs.helm.sh/using_helm/#securing-your-helm-installation
+helm-all: init-helm init-helm-rbac
+
 init-helm:
 	helm init
 
