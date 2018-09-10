@@ -53,12 +53,12 @@ spec:
         {
           "Effect": "Allow",
           "Action": ["S3:ListBucket"],
-          "Resource": ["arn:aws:s3:::landsat-pds","arn:aws:s3:::dea-public-data"]
+          "Resource": ["arn:aws:s3:::landsat-pds","arn:aws:s3:::dea-public-data","arn:aws:s3:::dea-public-data-dev"]
         },
         {
           "Effect": "Allow",
           "Action": ["S3:GetObject"],
-          "Resource": ["arn:aws:s3:::landsat-pds/*","arn:aws:s3:::dea-public-data/*"]
+          "Resource": ["arn:aws:s3:::landsat-pds/*","arn:aws:s3:::dea-public-data/*","arn:aws:s3:::dea-public-data-dev/*"]
         }
       ]
 ---
