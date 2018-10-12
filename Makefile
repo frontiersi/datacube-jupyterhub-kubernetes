@@ -1,19 +1,31 @@
 ## Initial Setup
 # Create the cluster
 
-
-# create-cluster:
-# 	kops create cluster \
-# 		--zones ap-southeast-2a,ap-southeast-2b odc.staging.frontiersi.io \
-# 		--ssh-public-key ~/.ssh/frontiersi.pub \
-# 		--master-size t2.micro \
-# 		--node-size t2.medium \
-# 		--node-count 2 \
-# 		--yes
-
 create-cluster:
-	kops create -f cluster/cluster.yaml
-	Follow the prompts to complete this...
+	kops create cluster \
+		--zones us-west-2a,us-west-2b,us-west-2c opendatacube.staging.frontiersi.io \
+		--ssh-public-key ~/.ssh/frontiersi.pub \
+		--master-size t2.micro \
+		--node-size t2.large \
+		--node-count 2 \
+		--yes
+
+# Note taht the cluster needs this added to it after it's deployed with:
+# `kops edit cluster` and `kops update cluster --yes`
+#   additionalPolicies:
+#     node: |
+#       [
+#         {
+#           "Effect": "Allow",
+#           "Action": ["S3:ListBucket"],
+#           "Resource": ["arn:aws:s3:::landsat-pds","arn:aws:s3:::dea-public-data","arn:aws:s3:::dea-public-data-dev"]
+#         },
+#         {
+#           "Effect": "Allow",
+#           "Action": ["S3:GetObject"],
+#           "Resource": ["arn:aws:s3:::landsat-pds/*","arn:aws:s3:::dea-public-data/*","arn:aws:s3:::dea-public-data-dev/*"]
+#         }
+#       ]
 
 validate:
 	kops validate cluster
@@ -25,6 +37,9 @@ deploy-dashboard:
 	kubectl create -f https://raw.githubusercontent.com/kubernetes/heapster/master/deploy/kube-config/influxdb/grafana.yaml
 	kubectl create -f https://raw.githubusercontent.com/kubernetes/heapster/master/deploy/kube-config/influxdb/heapster.yaml
 	kubectl create -f https://raw.githubusercontent.com/kubernetes/kops/master/addons/kubernetes-dashboard/v1.8.3.yaml
+
+dashboard-admin:
+	kubectl create -f dashboard/dashboard-admin.yaml
 
 # And this enables you to access the dashboard securely.
 proxy:
@@ -41,6 +56,8 @@ init-helm:
 init-helm-rbac:
 	kubectl create -f rbac-conf.yaml
 	helm init --service-account tiller
+	kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
+	kubectl patch deploy --namespace kube-system tiller-deploy -p '{"spec":{"template":{"spec":{"serviceAccount":"tiller"}}}}'
 
 repo-add:
 	helm repo add jupyterhub \
@@ -50,83 +67,49 @@ repo-update:
 	helm repo update
 
 install-jupyterhub:
-	helm install ./chart \
-		--timeout=5000 \
-		--version=v0.6 \
-		--name=odchub \
-		--namespace=odchub \
-		--set rbac.enabled=false \
-		-f config.yaml
+	helm upgrade --install odchub jupyterhub/jupyterhub --namespace odchub --version 0.7.0 --values config.yaml
 
 update-jupyterhub:
-	helm upgrade odchub jupyterhub/jupyterhub --version=v0.6 --set rbac.enabled=false -f config.yaml
+	helm upgrade odchub jupyterhub/jupyterhub --values config.yaml
 
 get-deployment:
 	kubectl --namespace=odchub get deployment
 
-## SSL Magic ##
-# May not be required, but definitely works.
-# Ingress
-create-ingress-namespace:
-	kubectl create namespace ingress-controller
-
-create-ingress-configmap:
-	kubectl create -f ingress/nginx-configmap.yaml
-
-create-ingress-controller:
-	kubectl create -f ingress/nginx-ingress.yaml
-
-# Self-signed SSL
-create-ssl:
-	openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout ./ingress/nginx-selfsigned.key -out ./ingress/nginx-selfsigned.crt
-	openssl dhparam -out ./ingress/dhparam.pem 2048
-
-create-ssl-secrets:
-	kubectl create secret --namespace ingress-controller tls tls-certificate --key ./ingress/nginx-selfsigned.key --cert ./ingress/nginx-selfsigned.crt
-	kubectl create secret --namespace ingress-controller generic tls-dhparam --from-file=./ingress/dhparam.pem
-
-deploy-letsencrypt:
-	kubectl apply -f ingress/namespace.yaml
-	kubectl apply -f ingress/configmap.yaml
-	kubectl apply -f ingress/service-account.yaml
-	kubectl apply -f ingress/cluster-role.yaml
-	kubectl apply -f ingress/cluster-role-binding.yaml
-	kubectl apply -f ingress/deployment.yaml
-
-
 ## AWS Infrastructure ##
-create-vpc:
-	aws cloudformation create-stack \
-		--region ap-southeast-2 \
-		--stack-name odc-jupyterhub-infra-vpc \
-		--template-body file://cloudformation//vpc.yaml \
-		--parameter file://cloudformation//parameters-vpc.json \
-		--tags Key=app,Value=esp \
-		--capabilities CAPABILITY_NAMED_IAM
-
-update-vpc:
-	aws cloudformation update-stack \
-		--stack-name odc-jupyterhub-infra-vpc \
-		--template-body file://cloudformation//vpc.yaml \
-		--parameter file://cloudformation//parameters-vpc.json \
-		--tags Key=app,Value=esp \
-		--capabilities CAPABILITY_NAMED_IAM
-
 create-rds:
 	aws cloudformation create-stack \
-		--region ap-southeast-2 \
+		--region us-west-2 \
 		--stack-name odc-kube-jupyterhub-rds \
 		--template-body file://cloudformation//rds.yaml \
 		--parameter file://cloudformation//parameters-rds.json \
-		--tags Key=app,Value=odc-jupyterhub \
+		--tags Key=app,Value=opendatacube-jupyterhub \
 		--capabilities CAPABILITY_NAMED_IAM
 
 update-rds:
 	aws cloudformation update-stack \
+		--region us-west-2 \
 		--stack-name odc-kube-jupyterhub-rds \
 		--template-body file://cloudformation//rds.yaml \
 		--parameter file://cloudformation//parameters-rds.json \
 		--tags Key=app,Value=odc-jupyterhub \
+		--capabilities CAPABILITY_NAMED_IAM
+		
+create-indexer:
+	aws cloudformation create-stack \
+		--region us-west-2 \
+		--stack-name odc-kube-jupyterhub-indexer \
+		--template-body file://cloudformation//indexer.yaml \
+		--parameter file://cloudformation//parameters-indexer.json \
+		--tags Key=app,Value=opendatacube-jupyterhub \
+		--capabilities CAPABILITY_NAMED_IAM
+		
+update-indexer:
+	aws cloudformation update-stack \
+		--region us-west-2 \
+		--stack-name odc-kube-jupyterhub-indexer \
+		--template-body file://cloudformation//indexer.yaml \
+		--parameter file://cloudformation//parameters-indexer.json \
+		--tags Key=app,Value=opendatacube-jupyterhub \
 		--capabilities CAPABILITY_NAMED_IAM
 
 ## Encryption and decryption of parameters
@@ -144,9 +127,3 @@ encrypt-params:
 		--plaintext file://cloudformation/parameters-rds.json \
 		--query CiphertextBlob \
 		--output text | base64 --decode $(IGNORE_FLAG) > encrypted/parameters-rds.json.encrypted
-
-	aws kms encrypt \
-		--key-id $(KEY_ID) \
-		--plaintext file://cloudformation/parameters-vpc.json \
-		--query CiphertextBlob \
-		--output text | base64 --decode $(IGNORE_FLAG) > encrypted/parameters-vpc.json.encrypted
