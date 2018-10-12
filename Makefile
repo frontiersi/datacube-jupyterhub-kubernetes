@@ -127,3 +127,8 @@ encrypt-params:
 		--plaintext file://cloudformation/parameters-rds.json \
 		--query CiphertextBlob \
 		--output text | base64 --decode $(IGNORE_FLAG) > encrypted/parameters-rds.json.encrypted
+	aws kms encrypt \
+		--key-id $(KEY_ID) \
+		--plaintext file://cloudformation/parameters-indexer.json \
+		--query CiphertextBlob \
+		--output text | base64 --decode $(IGNORE_FLAG) > encrypted/parameters-indexer.json.encrypted
