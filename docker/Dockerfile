@@ -5,3 +5,6 @@ RUN apt-get update && apt-get install -y git
 RUN pip3 install nbgitpuller geopandas scikit-image fiona ipyleaflet geopy jupyterlab
 
 RUN jupyter nbextension enable --py --sys-prefix ipyleaflet
+RUN jupyter labextension install jupyter-leaflet
+RUN jupyter labextension install @jupyter-widgets/jupyterlab-manager
+

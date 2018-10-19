@@ -132,3 +132,19 @@ encrypt-params:
 		--plaintext file://cloudformation/parameters-indexer.json \
 		--query CiphertextBlob \
 		--output text | base64 --decode $(IGNORE_FLAG) > encrypted/parameters-indexer.json.encrypted
+
+decrypt-params:
+	aws kms decrypt \
+		--ciphertext-blob fileb://encrypted/config.yaml.encrypted \
+		--query Plaintext \
+		--output text | base64 --decode $(IGNORE_FLAG) > config.yaml
+
+	aws kms decrypt \
+		--ciphertext-blob fileb://encrypted/parameters-rds.json.encrypted \
+		--query Plaintext \
+		--output text | base64 --decode $(IGNORE_FLAG) > cloudformation/parameters-rds.json
+
+	aws kms decrypt \
+		--ciphertext-blob fileb://encrypted/parameters-vpc.json.encrypted \
+		--query Plaintext \
+		--output text | base64 --decode $(IGNORE_FLAG) > cloudformation/parameters-vpc.json
