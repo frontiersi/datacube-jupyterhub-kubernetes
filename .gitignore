@@ -1,6 +1,8 @@
-config.yaml
-ingress/dhparam.pem
-ingress/nginx-selfsigned.crt
-ingress/nginx-selfsigned.key
-cloudformation/parameters-rds.json
-cloudformation/parameters-vpc.json
+# Local .terraform directories
+**/.terraform/*
+
+# .tfstate files
+*.tfstate
+*.tfstate.*
+
+infrastructure/cluster.yaml

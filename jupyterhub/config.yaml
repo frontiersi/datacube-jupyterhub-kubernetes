@@ -1,0 +1,11 @@
+proxy:
+  enabled: true
+singleuser:
+  cloudMetadata:
+    enabled: true
+  image:
+    name: opendatacube/jupyterhub
+    tag: 'latest'
+  extraEnv:
+    DATACUBE_CONFIG_PATH: /conf/datacube.conf  # This has write access.
+    DB_PORT: 5432
