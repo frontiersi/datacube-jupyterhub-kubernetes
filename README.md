@@ -36,7 +36,6 @@ Familiarise yourself with the below variables that are located in the **vars.tfv
 
 | Variable               | Example                        | Notes                                                                              |
 | -----------------------|--------------------------------|------------------------------------------------------------------------------------|
-| kubernetes_state_store | sample-odc-cluster-state-store | S3 bucket to use to store the Kubernetes state store. Needs to be a unique. name.|
 | vpc_cidr               | 10.1.0.0/16                    | What VPC CIDR to use.            |
 | public_subnet_cidr1    | 10.1.1.0/24                    | This is allocating 254 addresses for public subnet 1 which is plenty for us.       |
 | public_subnet_cidr2    | 10.1.2.0/24                    | Make sure your subnets do not overlap.                                             |
@@ -64,7 +63,7 @@ Terraform will prompt you for these variables:
 | db_name                | dbname                         | Must be alphanumeric characters, underscores, or digits (0-9).                       |
 | db_username            | dbusername                     | Must contain 1 to 63 alphanumeric characters. First character must be a letter.    |
 | db_password            | password                       | Must contain 8 to 128 characters.                                                  |
-                                                  |
+| kubernetes_state_store | sample-odc-cluster-state-store-your-account-name | S3 bucket to use to store the Kubernetes state store. S3 two s3 buckets cannot be named the same so make yours unique.|
 
 ### 1.4 Run terraform to create your infrastructure
 
